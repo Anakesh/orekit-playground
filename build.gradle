@@ -1,0 +1,35 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm' version '1.3.71'
+}
+
+group 'ru.anakesh.test'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+test {
+    useJUnitPlatform()
+}
+
+dependencies {
+
+//    Lombok
+    compileOnly 'org.projectlombok:lombok:1.18.12'
+    annotationProcessor 'org.projectlombok:lombok:1.18.12'
+    testCompileOnly 'org.projectlombok:lombok:1.18.12'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.12'
+
+    compileOnly 'com.intellij:annotations:12.0'
+    annotationProcessor 'com.intellij:annotations:12.0'
+    testCompileOnly 'com.intellij:annotations:12.0'
+    testAnnotationProcessor 'com.intellij:annotations:12.0'
+
+    compile  'org.orekit:orekit:10.1'
+    compile 'com.github.davidmoten:predict4java:1.3.1'
+    testImplementation('org.junit.jupiter:junit-jupiter:5.6.1')
+}
