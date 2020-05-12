@@ -12,19 +12,40 @@ import org.orekit.utils.PVCoordinates;
 import ru.anakesh.test.orekit_playground.data.SatelliteInfo;
 import ru.anakesh.test.orekit_playground.data.SatelliteOrbitData;
 
+import java.io.File;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class SatelliteServiceTest {
     private final SatelliteService satelliteService = new SatelliteService();
+    private final File testDataFile = new File(this.getClass().getClassLoader().getResource("file/test_data.json").getFile());
+
+    private final String cosmosNorads = "" +
+            "1 44797U 19079A   19364.69412409  .00001906  00000-0  74700-4 0  9993\n2 44797  97.8946  64.1774 0350364 206.6749 151.6066 14.85336441  5166" +
+            "1 44797U 19079A   19364.89623045 +.00001959 +00000-0 +76643-4 0  9991\n2 44797 097.8946 064.3783 0350377 206.0107 152.3132 14.85337404005199" +
+            "1 44797U 19079A   19365.70465548  .00001858  00000-0  72857-4 0  9995\n2 44797  97.8945  65.1816 0350423 203.3550 155.1412 14.85340222  5316" +
+            "1 44797U 19079A   19365.90676160 +.00001885 +00000-0 +73873-4 0  9990\n2 44797 097.8945 065.3825 0350434 202.6915 155.8483 14.85341058005343" +
+            "1 44797U 19079A   20001.84992318 +.00001654 +00000-0 +65256-4 0  9998\n2 44797 097.8944 066.3198 0350496 199.5943 159.1521 14.85343262005483";
+    private final String usaNorads = "" +
+            "1 39232U 13043A   20110.84836233 0.00002500  00000-0  27937-4 0    03\n2 39232  97.9365 172.9948 0533243 226.5116 133.4882 14.75104637    00";
+
 
     @BeforeAll
     static void initializeOrekit() {
         OrekitUtils.initialize();
+    }
+
+    @Test
+    void tleFromTestDataTest() {
+        DataService dataService = new DataService();
+        SatelliteOrbitData satelliteOrbitData = dataService.parseSatelliteOrbitDataFromFIle(testDataFile);
+        TLE convertedTle = satelliteService.convertSatelliteStateSetToTle(satelliteOrbitData);
+        System.out.println(convertedTle);
+        compareTles(convertedTle, convertedTle);
     }
 
     @Test
@@ -54,19 +75,23 @@ class SatelliteServiceTest {
     private void convertSatelliteStateSetToTle(@NotNull TLE tle) {
         SatelliteOrbitData satelliteOrbitData = generateSatelliteOrbitData(tle, 1440, 10);
         TLE convertedTle = satelliteService.convertSatelliteStateSetToTle(satelliteOrbitData);
-        assertEquals(tle.getBStar(), convertedTle.getBStar(), 1e-4d, "BStar drag coefficient is not the same");
-        assertEquals(tle.getI(), convertedTle.getI(), 1e-11d, "Inclination is not the same");
-        assertEquals(tle.getRaan(), convertedTle.getRaan(), 1e-11d, "RAAN (Right Ascension of the Ascending Node) is not the same");
-        assertEquals(tle.getE(), convertedTle.getE(), 1e-7d, "Eccentricity is not the same");
-        assertEquals(tle.getPerigeeArgument(), convertedTle.getPerigeeArgument(), 1e-11d, "Argument of Perigee is not the same");
-        assertEquals(tle.getMeanAnomaly(), convertedTle.getMeanAnomaly(), 1e-11d, "Mean Anomaly is not the same");
-        assertEquals(tle.getMeanMotion(), convertedTle.getMeanMotion(), 1e-13d, "Mean Motion is not the same");
+        compareTles(tle, convertedTle);
+    }
+
+    private void compareTles(@NotNull TLE firstTle, @NotNull TLE secondTle) {
+        assertEquals(firstTle.getBStar(), secondTle.getBStar(), 1e-4d, "BStar drag coefficient is not the same");
+        assertEquals(firstTle.getI(), secondTle.getI(), 1e-11d, "Inclination is not the same");
+        assertEquals(firstTle.getRaan(), secondTle.getRaan(), 1e-11d, "RAAN (Right Ascension of the Ascending Node) is not the same");
+        assertEquals(firstTle.getE(), secondTle.getE(), 1e-7d, "Eccentricity is not the same");
+        assertEquals(firstTle.getPerigeeArgument(), secondTle.getPerigeeArgument(), 1e-11d, "Argument of Perigee is not the same");
+        assertEquals(firstTle.getMeanAnomaly(), secondTle.getMeanAnomaly(), 1e-11d, "Mean Anomaly is not the same");
+        assertEquals(firstTle.getMeanMotion(), secondTle.getMeanMotion(), 1e-13d, "Mean Motion is not the same");
     }
 
     @NotNull
     private SatelliteOrbitData generateSatelliteOrbitData(@NotNull TLE sourceTle, int numberOfStates, int timeStepInSeconds) {
         TLEPropagator tlePropagator = TLEPropagator.selectExtrapolator(sourceTle);
-        Set<SatelliteOrbitData.SatelliteState> states = new HashSet<>();
+        List<SatelliteOrbitData.SatelliteState> states = new ArrayList<>();
         AbsoluteDate date = sourceTle.getDate();
         for (int i = 0; i < numberOfStates; i++) {
             PVCoordinates pvCoordinates = tlePropagator.getPVCoordinates(date);
